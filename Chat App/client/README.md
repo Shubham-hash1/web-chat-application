@@ -1,70 +1,101 @@
-# Getting Started with Create React App
+# Chat App - Premium Real-Time Messenger
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A premium, state-of-the-art real-time messaging application built with a modern stack featuring instant message delivery, online presence tracking, secure authentication, and a responsive workspace layout.
 
-## Available Scripts
+---
 
-In the project directory, you can run:
+## 🚀 Technology Stack & Frameworks
 
-### `npm start`
+This application is built on a full-stack Javascript architecture:
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+### 1. Front-End (`client/`)
+* **Framework**: [React.js](https://reactjs.org/) (v18.2)
+* **Routing**: [React Router](https://reactrouter.com/) (v6.8) for route management and path protection.
+* **Styling**: [TailwindCSS](https://tailwindcss.com/) (v3.2) utilizing custom design systems (colors like `primary`, `secondary`, `light`).
+* **Real-time Client**: [Socket.io Client](https://socket.io/) (v4.6) for instant, bi-directional event communications.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+### 2. Back-End (`server/`)
+* **Runtime**: [Node.js](https://nodejs.org/)
+* **Web Framework**: [Express](https://expressjs.com/) (v4.18) for RESTful API routing.
+* **WebSocket Server**: [Socket.io](https://socket.io/) (v4.6) handling client socket handshakes, online status rooms, and message broadcasts.
+* **Security & Tokens**: [JSON Web Tokens (JWT)](https://jwt.io/) for session tokens and [BcryptJS](https://github.com/dcodeIO/bcrypt.js) for password hashing.
 
-### `npm test`
+---
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## 🗄️ Database Architecture
 
-### `npm run build`
+The application uses **MongoDB** as its primary data store, managed through the **Mongoose** (v7.0) ODM.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### Storage Locations
+1. **Cloud Database (MongoDB Atlas)**: If environment variables `DB_USERNAME` and `DB_PASSWORD` are configured, the server will connect to MongoDB Atlas cluster for production storage.
+2. **Local Fallback**: If Atlas environment variables are absent, the application automatically falls back to a local MongoDB server instance running at:
+   ```
+   mongodb://127.0.0.1:27017/chat-app
+   ```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### Database Schemas (Data Models)
+* **`User`** (`models/Users.js`):
+  * `fullName` (String, required)
+  * `email` (String, required, unique)
+  * `password` (String, required, hashed via bcrypt)
+  * `token` (String, JWT session authentication token)
+* **`Conversation`** (`models/Conversations.js`):
+  * `members` (Array, user IDs involved in the dialogue)
+* **`Message`** (`models/Messages.js`):
+  * `conversationId` (String, linked to conversation)
+  * `senderId` (String, sending user's ID)
+  * `message` (String, raw text payload of the message)
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+---
 
-### `npm run eject`
+## 📦 Core Libraries Used
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### Back-End:
+* `express` - HTTP framework
+* `socket.io` - WebSocket server
+* `mongoose` - Database ODM
+* `bcryptjs` - Password cryptography
+* `jsonwebtoken` - User identity tokens
+* `cors` - Cross-Origin Resource Sharing handling
+* `nodemon` - Hot reloading during development
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### Front-End:
+* `react` / `react-dom` - Component rendering library
+* `react-router-dom` - Page navigation & routing
+* `socket.io-client` - WebSocket client connection
+* `tailwindcss` - CSS utility styling framework
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+---
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+## 🔧 Installation & Getting Started
 
-## Learn More
+### 1. Database Setup
+Make sure you have MongoDB running locally (on default port `27017`) or configure the environment variables:
+```env
+DB_USERNAME=your_atlas_username
+DB_PASSWORD=your_atlas_password
+JWT_SECRET_KEY=your_jwt_secret_key
+```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### 2. Back-End Server Startup
+Open a terminal in the `server` directory and run:
+```bash
+# Install dependencies
+npm install
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+# Start backend server in development mode
+npm run dev
+```
+The server will run on `http://localhost:8000` and the Socket.io gateway will run on `http://localhost:8080`.
 
-### Code Splitting
+### 3. Front-End Client Startup
+Open another terminal in the `client` directory and run:
+```bash
+# Install dependencies
+npm install
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+# Start React development server
+npm start
+```
+The application will boot on `http://localhost:3000`.
 
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
