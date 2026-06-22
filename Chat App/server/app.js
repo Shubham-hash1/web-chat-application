@@ -25,18 +25,47 @@ app.use(cors());
 
 const port = process.env.PORT || 8000;
 
-// Socket.io
+// Socket.io JWT Middleware
+io.use((socket, next) => {
+    try {
+        const token = socket.handshake.auth.token || socket.handshake.headers['authorization'];
+        if (!token) {
+            return next(new Error('Authentication error: Token missing'));
+        }
+        
+        const JWT_SECRET_KEY = process.env.JWT_SECRET_KEY || 'THIS_IS_A_JWT_SECRET_KEY';
+        jwt.verify(token, JWT_SECRET_KEY, (err, decoded) => {
+            if (err) {
+                return next(new Error('Authentication error: Invalid or expired token'));
+            }
+            socket.user = decoded;
+            next();
+        });
+    } catch (error) {
+        console.error('Socket Auth Middleware Error:', error);
+        return next(new Error('Authentication error: Internal error'));
+    }
+});
+
+// Socket.io Connections
 let users = [];
 io.on('connection', socket => {
     console.log('User connected', socket.id);
-    socket.on('addUser', userId => {
-        users = users.filter(user => user.userId !== userId);
-        const user = { userId, socketId: socket.id };
-        users.push(user);
+    
+    // Automatically register the user using their verified userId from the JWT payload
+    const userId = socket.user.userId;
+    users = users.filter(user => user.userId !== userId);
+    const userObj = { userId, socketId: socket.id };
+    users.push(userObj);
+    io.emit('getUsers', users);
+
+    socket.on('addUser', () => {
+        // Fallback for compatibility: keep getUsers update
         io.emit('getUsers', users);
     });
 
-    socket.on('sendMessage', async ({ senderId, receiverId, message, conversationId }) => {
+    socket.on('sendMessage', async ({ receiverId, message, conversationId }) => {
+        const senderId = socket.user.userId;
         const receiver = users.find(user => user.userId === receiverId);
         const user = await Users.findById(senderId);
         console.log('sender :>> ', socket.id, receiver);
@@ -54,7 +83,8 @@ io.on('connection', socket => {
         }
     });
 
-    socket.on('typing', ({ senderId, receiverId, isTyping }) => {
+    socket.on('typing', ({ receiverId, isTyping }) => {
+        const senderId = socket.user.userId;
         const receiver = users.find(user => user.userId === receiverId);
         if (receiver) {
             io.to(receiver.socketId).emit('typing', { senderId, isTyping });
