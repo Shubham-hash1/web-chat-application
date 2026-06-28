@@ -31,6 +31,7 @@ const Form = ({
                 headers: {
                     'Content-Type': 'application/json'
                 },
+                credentials: 'include',
                 body: JSON.stringify(data)
             })
 
@@ -40,8 +41,7 @@ const Form = ({
             }else{
                 const resData = await res.json()
                 if(isSignInPage) {
-                    if(resData.token) {
-                        localStorage.setItem('user:token', resData.token)
+                    if(resData.user) {
                         localStorage.setItem('user:detail', JSON.stringify(resData.user))
                         navigate('/')
                     }

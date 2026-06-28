@@ -75,11 +75,12 @@ const Dashboard = () => {
 			const res = await fetch(`http://localhost:8000/api/conversations/${user?.id}`, {
 				method: 'GET',
 				headers: {
-					'Content-Type': 'application/json',
-					'Authorization': `Bearer ${localStorage.getItem('user:token')}`
-				}
+					'Content-Type': 'application/json'
+				},
+				credentials: 'include'
 			});
 			if (res.status === 401 || res.status === 403) {
+				localStorage.removeItem('user:detail');
 				navigate('/users/sign_in');
 				return;
 			}
@@ -95,11 +96,12 @@ const Dashboard = () => {
 			const res = await fetch(`http://localhost:8000/api/users/${user?.id}`, {
 				method: 'GET',
 				headers: {
-					'Content-Type': 'application/json',
-					'Authorization': `Bearer ${localStorage.getItem('user:token')}`
-				}
+					'Content-Type': 'application/json'
+				},
+				credentials: 'include'
 			});
 			if (res.status === 401 || res.status === 403) {
+				localStorage.removeItem('user:detail');
 				navigate('/users/sign_in');
 				return;
 			}
@@ -111,13 +113,23 @@ const Dashboard = () => {
 	}, [user, navigate])
 
 	useEffect(() => {
-		setSocket(io('http://localhost:8080'))
+		setSocket(io('http://localhost:8080', {
+			withCredentials: true
+		}))
 	}, [])
 
 	useEffect(() => {
 		if (!socket) return;
 
-		socket.emit('addUser', user?.id);
+		socket.emit('addUser');
+
+		socket.on('connect_error', (err) => {
+			console.error('Socket connection error:', err.message);
+			if (err.message.includes('Authentication error')) {
+				localStorage.removeItem('user:detail');
+				navigate('/users/sign_in');
+			}
+		});
 		
 		socket.on('getUsers', users => {
 			console.log('activeUsers :>> ', users);
@@ -151,11 +163,12 @@ const Dashboard = () => {
 		});
 
 		return () => {
+			socket.off('connect_error');
 			socket.off('getUsers');
 			socket.off('getMessage');
 			socket.off('typing');
 		};
-	}, [socket, user, fetchConversations])
+	}, [socket, user, fetchConversations, navigate])
 
 	useEffect(() => {
 		messageRef?.current?.scrollIntoView({ behavior: 'smooth' })
@@ -173,11 +186,12 @@ const Dashboard = () => {
 			const res = await fetch(`http://localhost:8000/api/message/${conversationId}?senderId=${user?.id}&receiverId=${receiver?.receiverId}`, {
 				method: 'GET',
 				headers: {
-					'Content-Type': 'application/json',
-					'Authorization': `Bearer ${localStorage.getItem('user:token')}`
-				}
+					'Content-Type': 'application/json'
+				},
+				credentials: 'include'
 			});
 			if (res.status === 401 || res.status === 403) {
+				localStorage.removeItem('user:detail');
 				navigate('/users/sign_in');
 				return;
 			}
@@ -233,9 +247,9 @@ const Dashboard = () => {
 			const res = await fetch(`http://localhost:8000/api/message`, {
 				method: 'POST',
 				headers: {
-					'Content-Type': 'application/json',
-					'Authorization': `Bearer ${localStorage.getItem('user:token')}`
+					'Content-Type': 'application/json'
 				},
+				credentials: 'include',
 				body: JSON.stringify({
 					conversationId: messages?.conversationId,
 					senderId: user?.id,
@@ -245,6 +259,7 @@ const Dashboard = () => {
 			});
 
 			if (res.status === 401 || res.status === 403) {
+				localStorage.removeItem('user:detail');
 				navigate('/users/sign_in');
 				return;
 			}
@@ -302,8 +317,15 @@ const Dashboard = () => {
 						<p className='text-xs font-medium text-slate-400'>My Account</p>
 					</div>
 					<button 
-						onClick={() => {
-							localStorage.removeItem('user:token');
+						onClick={async () => {
+							try {
+								await fetch('http://localhost:8000/api/logout', {
+									method: 'POST',
+									credentials: 'include'
+								});
+							} catch (error) {
+								console.error('Logout error:', error);
+							}
 							localStorage.removeItem('user:detail');
 							navigate('/users/sign_in');
 						}}
